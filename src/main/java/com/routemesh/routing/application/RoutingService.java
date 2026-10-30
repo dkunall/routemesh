@@ -353,11 +353,7 @@ public class RoutingService {
     }
 
     private static boolean open(Shipment s) {
-        return switch (s.status()) {
-            case ASSIGNED, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY -> s.kind() == ShipmentKind.DELIVERY
-                    || s.status() == ASSIGNED || s.status() == OUT_FOR_DELIVERY;
-            default -> false;
-        };
+        return s.status().awaitingVisit(s.kind());
     }
 
     // --- dispatch and reads ------------------------------------------------------------------------------------

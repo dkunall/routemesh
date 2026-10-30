@@ -54,7 +54,16 @@ public enum ShipmentStatus {
         return this == DELIVERED || this == RETURNED || this == CANCELLED;
     }
 
-    /** Still to be visited by a vehicle, so it belongs in a route plan. */
+    /** On a route and the vehicle still has to go there. A collected return is on board, not awaiting a visit. */
+    public boolean awaitingVisit(ShipmentKind kind) {
+        return switch (this) {
+            case ASSIGNED, OUT_FOR_DELIVERY -> true;
+            case PICKED_UP, IN_TRANSIT -> kind == ShipmentKind.DELIVERY;
+            default -> false;
+        };
+    }
+
+    /** Not on any route yet (or bounced off one), so it belongs in the next plan. */
     public boolean plannable() {
         return this == CREATED || this == FAILED_ATTEMPT;
     }

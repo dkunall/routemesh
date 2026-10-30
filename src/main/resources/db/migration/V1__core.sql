@@ -109,7 +109,7 @@ create table tracking_event (
     id           bigserial primary key,
     device_id    uuid not null references device (id),
     device_seq   bigint not null check (device_seq > 0),
-    shipment_id  uuid not null references shipment (id),
+    shipment_id  uuid not null,
     status       text not null,
     reason       text,
     position     geography(Point, 4326),
@@ -120,7 +120,8 @@ create table tracking_event (
     applied_at   timestamptz,
     unique (device_id, device_seq)
 );
-create index tracking_event_pending on tracking_event (device_id, device_seq) where state = 'PENDING';
+create index tracking_event_pending on tracking_event (device_id, received_at) where state = 'PENDING';
+create index tracking_event_shipment on tracking_event (shipment_id);
 
 create table pod (
     shipment_id   uuid primary key references shipment (id),

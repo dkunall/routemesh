@@ -10,6 +10,8 @@ public interface CellIndex {
     /** Cells at grid distance exactly {@code k} from {@code origin} (k = 0 is the origin itself). */
     List<Long> ring(long origin, int k);
 
+    GeoPoint center(long cell);
+
     /** Approximate edge length of a cell at this resolution, in km. */
     double edgeKm(int resolution);
 }
