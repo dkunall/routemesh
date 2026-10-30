@@ -97,6 +97,7 @@ S1=${STOPS[0]}
 expect 200 "$DEV" POST "/v1/drivers/${DRIVER[1]}/events:batch" \
   "{\"events\":[{\"deviceSeq\":$((N + 1)),\"shipmentId\":\"$S1\",\"status\":\"OUT_FOR_DELIVERY\"}]}" > /dev/null
 until_eq 20 1 mails "${EMAIL[$S1]}" "Your delivery code" > /dev/null
+until_eq 20 OUT_FOR_DELIVERY bash -c "source ./lib.sh; call '' GET /v1/track/${TOKEN[$S1]} | head -1 | jq -r .status" > /dev/null
 PAGE=$(expect 200 "" GET "/v1/track/${TOKEN[$S1]}")
 echo "  public page: $(jq -c '{status, eta, driverArea, driverName}' <<< "$PAGE")"
 check "the page hides internal ids" "$(jq 'has("id") or has("routeId")' <<< "$PAGE")" false
