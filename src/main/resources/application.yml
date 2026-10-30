@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: routemesh
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${ROUTEMESH_DB_URL:jdbc:postgresql://localhost:5432/routemesh}
+    username: ${ROUTEMESH_DB_USER:routemesh}
+    password: ${ROUTEMESH_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 20
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${ROUTEMESH_REDIS_HOST:localhost}
+      port: ${ROUTEMESH_REDIS_PORT:6379}
+      password: ${ROUTEMESH_REDIS_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${ROUTEMESH_KAFKA:localhost:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: record
+  mail:
+    host: ${ROUTEMESH_SMTP_HOST:localhost}
+    port: ${ROUTEMESH_SMTP_PORT:1025}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ROUTEMESH_ISSUER:http://localhost:8080/default}
+  servlet:
+    multipart:
+      enabled: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${ROUTEMESH_PORT:8080}
+  shutdown: graceful
+  tomcat:
+    max-swallow-size: 4MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles:
+        routemesh.plan.solve: 0.5,0.95,0.99
+
+routemesh:
+  security:
+    dispatcher-subjects: ${ROUTEMESH_DISPATCHER_SUBJECTS:}
+    otp-key: ${ROUTEMESH_OTP_KEY:}
+    public-base-url: ${ROUTEMESH_PUBLIC_BASE_URL:http://127.0.0.1:8970}
+  mail:
+    from: ${ROUTEMESH_MAIL_FROM:dispatch@routemesh.example.test}
+    ops-address: ${ROUTEMESH_OPS_ADDRESS:ops@routemesh.example.test}
+  planning:
+    road-factor: ${ROUTEMESH_ROAD_FACTOR:1.35}
+    planning-kmh: ${ROUTEMESH_PLANNING_KMH:22}
+    budget: ${ROUTEMESH_PLAN_BUDGET:PT1S}
+    insert-budget: PT0.05S
+    service-minutes: ${ROUTEMESH_SERVICE_MINUTES:5}
+    candidate-ring: ${ROUTEMESH_CANDIDATE_RING:6}
+    zone: ${ROUTEMESH_ZONE:Asia/Kolkata}
+  tracking:
+    h3-resolution: 9
+    ewma-alpha: 0.2
+    max-speed-kmh: 130
+    simplify-meters: 8
+    max-ping-age: PT6H
+    sla-margin: ${ROUTEMESH_SLA_MARGIN:PT10M}
+    gap-wait: ${ROUTEMESH_GAP_WAIT:PT2M}
+  delivery:
+    max-attempts: 3
+    pod-radius-meters: ${ROUTEMESH_POD_RADIUS_M:150}
+    fence-meters: 60
+    hub-fence-meters: 250
+    max-photo-bytes: 2000000
+    tracking-ttl-after-delivery: P7D
+  retention:
+    pings: ${ROUTEMESH_PING_RETENTION:P30D}
+  jobs:
+    enabled: ${ROUTEMESH_JOBS_ENABLED:true}

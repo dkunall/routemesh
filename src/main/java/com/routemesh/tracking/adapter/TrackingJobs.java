@@ -26,7 +26,7 @@ class TrackingJobs {
     private final Duration pingRetention;
 
     TrackingJobs(DeviceEventService events, PingStore pings, ViewStore views, Clock clock,
-                 @Value("${routemesh.tracking.ping-retention:P30D}") Duration pingRetention) {
+                 @Value("${routemesh.retention.pings:P30D}") Duration pingRetention) {
         this.events = events;
         this.pings = pings;
         this.views = views;
