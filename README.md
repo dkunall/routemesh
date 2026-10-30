@@ -80,9 +80,11 @@ Tests: `mvn verify` runs:
 - 39 unit tests and 7 ArchUnit rules
 - 14 integration tests on Testcontainers (PostGIS, Redis, Kafka, Mailpit, mock OAuth2): delivery flow, device sync, routing concurrency, and exceptions
 
-Two of the integration tests are concurrency checks:
-- parallel inserts and dispatches on one route
-- parallel PODs and duplicate event batches
+Four of the integration tests are concurrency or idempotency checks:
+- concurrent plans never assign a parcel twice
+- parallel inserts on the same route version let exactly one through
+- concurrent shipment creates with one Idempotency-Key make one shipment
+- the same event batch from eight concurrent retries applies once
 
 ## Numbers
 
