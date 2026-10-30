@@ -1,5 +1,7 @@
 package com.routemesh.bench;
 
+import com.routemesh.geo.adapter.H3CellIndex;
+import com.routemesh.geo.domain.CellIndex;
 import com.routemesh.geo.domain.GeoPoint;
 import com.routemesh.geo.domain.Haversine;
 import com.routemesh.routing.domain.TravelModel;
@@ -35,7 +37,7 @@ public final class EtaBench {
         int train = args.length > 0 ? Integer.parseInt(args[0]) : 4000;
         int test = args.length > 1 ? Integer.parseInt(args[1]) : 1000;
         long seed = args.length > 2 ? Long.parseLong(args[2]) : 7;
-        var cells = new H3Cells();
+        var cells = new H3CellIndex();
         var world = new World(seed);
 
         var cellSpeeds = new HashMap<Key, Ewma>();

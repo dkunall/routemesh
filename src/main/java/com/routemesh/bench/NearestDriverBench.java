@@ -1,5 +1,7 @@
 package com.routemesh.bench;
 
+import com.routemesh.geo.adapter.H3CellIndex;
+import com.routemesh.geo.domain.CellIndex;
 import com.routemesh.geo.domain.GeoPoint;
 import com.routemesh.geo.domain.Haversine;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ public final class NearestDriverBench {
     public static void main(String[] args) {
         int queries = args.length > 0 ? Integer.parseInt(args[0]) : 2000;
         long seed = args.length > 1 ? Long.parseLong(args[1]) : 11;
-        var cells = new H3Cells();
+        var cells = new H3CellIndex();
         // neighbouring centres are about sqrt(3) * edge apart; take K of those, less one edge for a query that is not
         // at its cell centre. Not a hard guarantee: H3 cells vary in size and shape.
         double radius = (K * Math.sqrt(3) - 1) * cells.edgeKm(RES);
@@ -94,7 +96,7 @@ public final class NearestDriverBench {
         return out;
     }
 
-    private static RingResult rings(H3Cells cells, Map<Long, List<Integer>> buckets, GeoPoint[] pos, GeoPoint q,
+    private static RingResult rings(CellIndex cells, Map<Long, List<Integer>> buckets, GeoPoint[] pos, GeoPoint q,
                                     double radius) {
         long origin = cells.cell(q, RES);
         var out = new ArrayList<Integer>();
