@@ -189,7 +189,7 @@ public class PingProcessor {
 
     /** Leaving the hub with parcels scanned on board puts them in transit. */
     private void leftHub(RouteRow route) {
-        for (var s : shipments.onRoute(route.id())) {
+        for (var s : inLockOrder(route)) {
             if (s.kind() == ShipmentKind.DELIVERY && s.status() == ShipmentStatus.PICKED_UP) {
                 shipments.lock(s.id()).ifPresent(l -> lifecycle.move(l, ShipmentStatus.IN_TRANSIT, "hub-exit", "geofence"));
             }
@@ -199,7 +199,7 @@ public class PingProcessor {
     /** Back at the hub: returns are handed in, undelivered parcels are back, and an empty route is done. */
     private void backAtHub(RouteRow route) {
         boolean open = false;
-        for (var s : shipments.onRoute(route.id())) {
+        for (var s : inLockOrder(route)) {
             var locked = shipments.lock(s.id()).orElseThrow();
             if (locked.kind() == ShipmentKind.DELIVERY && locked.status() == ShipmentStatus.RTO) {
                 lifecycle.move(locked, ShipmentStatus.RETURNED, "back-at-hub", "geofence");
@@ -213,6 +213,13 @@ public class PingProcessor {
             routes.complete(route.id(), clock.instant());
             meters.counter("routemesh.route.completed").increment();
         }
+    }
+
+    /** Row locks in id order, the same order as {@code ShipmentStore.lockAll}, so two writers cannot deadlock. */
+    private List<Shipment> inLockOrder(RouteRow route) {
+        // lower-case hex string order is Postgres uuid order (UUID.compareTo is signed, so it is not)
+        return shipments.onRoute(route.id()).stream()
+                .sorted(Comparator.comparing((Shipment s) -> s.id().toString())).toList();
     }
 
     private void refreshEtas(RouteRow route, Ping last) {

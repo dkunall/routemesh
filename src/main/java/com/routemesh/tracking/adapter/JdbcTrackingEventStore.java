@@ -77,7 +77,7 @@ class JdbcTrackingEventStore implements TrackingEventStore {
 
     @Override
     public List<Stored> forShipment(UUID shipmentId) {
-        return db.sql(COLS + "where shipment_id = ? order by received_at, id").param(shipmentId).query(this::map).list();
+        return db.sql(COLS + "where shipment_id = ? order by coalesce(applied_at, received_at), device_seq, id").param(shipmentId).query(this::map).list();
     }
 
     private Stored map(ResultSet rs, int n) throws SQLException {

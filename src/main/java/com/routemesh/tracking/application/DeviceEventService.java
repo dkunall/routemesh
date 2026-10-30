@@ -192,14 +192,16 @@ public class DeviceEventService {
                 return;
             }
         }
-        try {
-            lifecycle.move(s, next, e.reason(), "device:" + deviceId);
-            events.outcome(e.id(), "APPLIED", null, now);
-            meters.counter("routemesh.device_events", "result", "applied").increment();
-        } catch (ShipmentStatus.IllegalTransition ex) {
+        // checked here rather than caught: an exception out of the lifecycle would mark the whole batch's
+        // transaction rollback-only
+        if (!s.status().canMoveTo(s.kind(), next)) {
             events.outcome(e.id(), "REJECTED", "illegal-transition", now);
             meters.counter("routemesh.device_events", "result", "illegal_transition").increment();
+            return;
         }
+        lifecycle.move(s, next, e.reason(), "device:" + deviceId);
+        events.outcome(e.id(), "APPLIED", null, now);
+        meters.counter("routemesh.device_events", "result", "applied").increment();
     }
 
     /** A failed attempt must be reported from near the address, so "customer not home" cannot be faked from afar. */
