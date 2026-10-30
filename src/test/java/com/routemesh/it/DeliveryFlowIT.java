@@ -138,6 +138,7 @@ class DeliveryFlowIT extends ItBase {
         double km = Math.hypot(dLat, dLng);
         // an H3 res-8 cell centre: near, but not the exact fix
         assertThat(km).isGreaterThan(0.0).isLessThan(1.0);
-        assertThat(page.path("eta").isNull()).isFalse();
+        // ETA comes from the ping pipeline, which runs asynchronously to the status projection
+        eventually(() -> !anon().get("/v1/track/" + token).body().path("eta").isNull());
     }
 }

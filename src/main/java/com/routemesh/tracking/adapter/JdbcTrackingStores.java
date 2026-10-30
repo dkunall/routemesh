@@ -106,7 +106,9 @@ class JdbcTrackingStores implements PingStore, GeofenceStore, AlertStore, ViewSt
                         on conflict (shipment_id) do update set status = excluded.status,
                             window_start = excluded.window_start, window_end = excluded.window_end,
                             eta = case when excluded.status in ('DELIVERED', 'RETURNED', 'CANCELLED', 'RTO', 'FAILED_ATTEMPT', 'CREATED')
-                                  then null else tracking_view.eta end,
+                                  then null else coalesce(tracking_view.eta, excluded.eta,
+                                      (select max(rs.predicted_eta) from route_stop rs
+                                        where rs.shipment_id = excluded.shipment_id)) end,
                             attempts = excluded.attempts, driver_name = excluded.driver_name,
                             driver_id = excluded.driver_id, last_event_at = excluded.last_event_at,
                             delivered_at = excluded.delivered_at, expires_at = excluded.expires_at, updated_at = now()
