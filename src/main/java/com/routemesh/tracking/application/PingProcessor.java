@@ -106,6 +106,8 @@ public class PingProcessor {
         meters.counter("routemesh.pings", "result", "stale").increment(r.stale());
         meters.counter("routemesh.pings", "result", "outlier").increment(r.outliers());
         meters.counter("routemesh.pings", "result", "accepted").increment(r.accepted().size());
+        log.debug("driver {}: {} pings, {} accepted, {} stale, {} duplicate, {} outlier", driverId, batch.size(),
+                r.accepted().size(), r.stale(), r.duplicates(), r.outliers());
         if (r.accepted().isEmpty()) {
             return;
         }
