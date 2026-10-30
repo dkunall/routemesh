@@ -4,7 +4,7 @@ import com.routemesh.geo.application.DriverIndex;
 import com.routemesh.geo.domain.CellIndex;
 import com.routemesh.geo.domain.GeoPoint;
 import com.routemesh.shared.config.RouteMeshProperties;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 

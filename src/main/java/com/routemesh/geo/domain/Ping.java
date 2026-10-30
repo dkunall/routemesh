@@ -1,6 +1,5 @@
-package com.routemesh.tracking.domain;
+package com.routemesh.geo.domain;
 
-import com.routemesh.geo.domain.GeoPoint;
 
 import java.time.Instant;
 

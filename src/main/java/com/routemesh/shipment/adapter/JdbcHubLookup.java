@@ -1,4 +1,4 @@
-package com.routemesh.fleet.adapter;
+package com.routemesh.shipment.adapter;
 
 import com.routemesh.shipment.application.ShipmentService;
 import org.springframework.jdbc.core.simple.JdbcClient;

@@ -1,6 +1,6 @@
 package com.routemesh.tracking.application;
 
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 
 import java.util.List;
 import java.util.UUID;

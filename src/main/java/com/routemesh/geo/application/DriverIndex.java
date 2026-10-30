@@ -1,7 +1,7 @@
 package com.routemesh.geo.application;
 
 import com.routemesh.geo.domain.GeoPoint;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 
 import java.time.Instant;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.routemesh.tracking.application;
 
 import com.routemesh.geo.domain.GeoPoint;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 import com.routemesh.tracking.domain.SegmentSpeeds;
 
 import java.time.Instant;

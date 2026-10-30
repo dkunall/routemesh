@@ -7,7 +7,7 @@ import com.routemesh.tracking.application.TrackingStores.GeofenceStore;
 import com.routemesh.tracking.application.TrackingStores.PingStore;
 import com.routemesh.tracking.application.TrackingStores.View;
 import com.routemesh.tracking.application.TrackingStores.ViewStore;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 

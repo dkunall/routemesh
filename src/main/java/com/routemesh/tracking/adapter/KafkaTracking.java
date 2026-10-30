@@ -8,7 +8,7 @@ import com.routemesh.outbox.application.Outbox;
 import com.routemesh.tracking.application.PingProcessor;
 import com.routemesh.tracking.application.PingPublisher;
 import com.routemesh.tracking.application.TrackingProjector;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;

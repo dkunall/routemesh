@@ -1,5 +1,6 @@
 package com.routemesh.tracking.domain;
 
+import com.routemesh.geo.domain.Ping;
 import com.routemesh.geo.domain.DouglasPeucker;
 import com.routemesh.geo.domain.Haversine;
 

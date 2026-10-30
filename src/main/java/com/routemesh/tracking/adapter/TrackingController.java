@@ -1,7 +1,6 @@
 package com.routemesh.tracking.adapter;
 
 import com.routemesh.geo.domain.GeoPoint;
-import com.routemesh.pod.application.PodService;
 import com.routemesh.shared.error.ApiException;
 import com.routemesh.shared.security.Caller;
 import com.routemesh.shared.security.Device;
@@ -13,7 +12,7 @@ import com.routemesh.tracking.application.PublicTracking;
 import com.routemesh.tracking.application.RateLimiter;
 import com.routemesh.tracking.application.TrackingEventStore.EventIn;
 import com.routemesh.tracking.application.TrackingEventStore.Stored;
-import com.routemesh.tracking.domain.Ping;
+import com.routemesh.geo.domain.Ping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,16 +55,14 @@ class TrackingController {
 
     private final PingPublisher pings;
     private final DeviceEventService events;
-    private final PodService pods;
     private final PublicTracking tracking;
     private final ShipmentService shipments;
     private final RateLimiter limiter;
 
-    TrackingController(PingPublisher pings, DeviceEventService events, PodService pods, PublicTracking tracking,
+    TrackingController(PingPublisher pings, DeviceEventService events, PublicTracking tracking,
                        ShipmentService shipments, RateLimiter limiter) {
         this.pings = pings;
         this.events = events;
-        this.pods = pods;
         this.tracking = tracking;
         this.shipments = shipments;
         this.limiter = limiter;
@@ -112,11 +109,6 @@ class TrackingController {
             throw ApiException.invalid("shipmentId in the body must match the path");
         }
         return events.ingest(device, List.of(e)).getFirst();
-    }
-
-    @PostMapping("/v1/shipments/{shipmentId}/pod")
-    PodService.PodView pod(Device device, @PathVariable UUID shipmentId, @RequestBody PodService.PodIn in) {
-        return pods.submit(device, shipmentId, in);
     }
 
     // --- dispatcher
