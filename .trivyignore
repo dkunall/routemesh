@@ -1,0 +1,6 @@
+# spring-webmvc 6.2.x has no open-source fix for these; the fixed line is 7.0.9 (Spring Boot 4).
+# CVE-2026-47884 needs XsltView; RouteMesh renders no server-side views.
+# CVE-2026-47890 needs view fragments streamed over SSE; RouteMesh has no SSE endpoints.
+# Revisit on Boot 4.
+CVE-2026-47884
+CVE-2026-47890
