@@ -21,18 +21,41 @@ public final class Solver {
     private Solver() {
     }
 
-    /** Builds from scratch: cheapest insertion, then local search on every route. */
+    /**
+     * Builds from scratch from two starts, cheapest insertion and nearest neighbour, runs local search on each and
+     * keeps the better one (fewer unassigned, then fewer km). Insertion usually wins; on small instances with few
+     * vans the nearest-neighbour start sometimes ends shorter, and without it the plan could lose to the baseline.
+     */
     public static Plan solve(Problem p, Duration budget) {
         long deadline = deadline(budget);
         var in = new Instance(p);
         var routes = emptyRoutes(in);
+        var pending = allJobs(in);
+        boolean exhausted = construct(routes, pending, deadline);
+        exhausted |= localSearch(routes, null, deadline);
+        Plan fromInsertion = toPlan(in, routes, pending, exhausted);
+
+        var nnRoutes = emptyRoutes(in);
+        var nnPending = allJobs(in);
+        nearestNeighbour(in, nnRoutes, nnPending);
+        boolean nnExhausted = localSearch(nnRoutes, null, deadline);
+        Plan fromNn = toPlan(in, nnRoutes, nnPending, exhausted || nnExhausted);
+        return better(fromNn, fromInsertion) ? fromNn : fromInsertion;
+    }
+
+    private static boolean better(Plan a, Plan b) {
+        if (a.unassigned().size() != b.unassigned().size()) {
+            return a.unassigned().size() < b.unassigned().size();
+        }
+        return a.totalKm() < b.totalKm() - EPS;
+    }
+
+    private static LinkedHashSet<Integer> allJobs(Instance in) {
         var pending = new LinkedHashSet<Integer>();
         for (int j = 0; j < in.jobs; j++) {
             pending.add(in.jobNode(j));
         }
-        boolean exhausted = construct(routes, pending, deadline);
-        exhausted |= localSearch(routes, null, deadline);
-        return toPlan(in, routes, pending, exhausted);
+        return pending;
     }
 
     /** Cheapest insertion only, no local search. Used to show what the local search adds. */
@@ -84,10 +107,12 @@ public final class Solver {
     public static Plan nearestNeighbour(Problem p) {
         var in = new Instance(p);
         var routes = emptyRoutes(in);
-        var pending = new LinkedHashSet<Integer>();
-        for (int j = 0; j < in.jobs; j++) {
-            pending.add(in.jobNode(j));
-        }
+        var pending = allJobs(in);
+        nearestNeighbour(in, routes, pending);
+        return toPlan(in, routes, pending, false);
+    }
+
+    private static void nearestNeighbour(Instance in, List<RouteState> routes, Set<Integer> pending) {
         for (RouteState r : routes) {
             while (true) {
                 int last = r.size() == 0 ? in.startNode(r.vehicle) : r.seq[r.size() - 1];
@@ -106,7 +131,6 @@ public final class Solver {
                 pending.remove(best);
             }
         }
-        return toPlan(in, routes, pending, false);
     }
 
     /** Checks a given assignment (e.g. one loaded from the database) and computes its schedule. */

@@ -39,7 +39,7 @@ public final class SolverBench {
             Solver.nearestNeighbour(warm);
             Solver.solve(warm, budget);
         }
-        out.println("## Full plan: nearest neighbour (baseline) vs cheapest insertion vs cheapest insertion + local search");
+        out.println("## Full plan: nearest neighbour (baseline) vs cheapest insertion vs the planner");
         out.println();
         out.println("| jobs | layout | method | km (mean) | vehicles (mean) | unassigned (total) | ms (median) | km vs baseline |");
         out.println("|---:|---|---|---:|---:|---:|---:|---:|");
@@ -50,10 +50,10 @@ public final class SolverBench {
                     Problem p = SyntheticInstances.generate(seed, n, 30, 150, layout, 15, TRAVEL);
                     rows.computeIfAbsent("nearest-neighbour", k -> new Agg()).add(timed(() -> Solver.nearestNeighbour(p)));
                     rows.computeIfAbsent("cheapest-insertion", k -> new Agg()).add(timed(() -> Solver.construct(p)));
-                    rows.computeIfAbsent("insertion+2opt+relocate", k -> new Agg()).add(timed(() -> Solver.solve(p, budget)));
+                    rows.computeIfAbsent("planner (2 starts + 2-opt + relocate)", k -> new Agg()).add(timed(() -> Solver.solve(p, budget)));
                 }
                 double base = rows.get("nearest-neighbour").meanKm();
-                for (String m : List.of("nearest-neighbour", "cheapest-insertion", "insertion+2opt+relocate")) {
+                for (String m : List.of("nearest-neighbour", "cheapest-insertion", "planner (2 starts + 2-opt + relocate)")) {
                     Agg a = rows.get(m);
                     out.printf(Locale.ROOT, "| %d | %s | %s | %.1f | %.1f | %d | %.1f | %+.1f%% |%n", n, layout, m,
                             a.meanKm(), a.meanVehicles(), a.unassigned, a.medianMs(), (a.meanKm() / base - 1) * 100);

@@ -82,6 +82,27 @@ class SolverTest {
     }
 
     @Test
+    void aPlanNeverLosesToTheBaselineOnADemoSizedDay() {
+        // 24 parcels within 8 km, all-day windows, three 150 kg vans: the shape of scripts/demo.sh, where a single
+        // cheapest-insertion start once ended 3% longer than nearest neighbour (CI run, 112.73 vs 109.36 km)
+        for (long seed = 1; seed <= 200; seed++) {
+            var rnd = new java.util.SplittableRandom(seed);
+            var jobs = new ArrayList<Job>();
+            for (int j = 0; j < 24; j++) {
+                GeoPoint at = Haversine.offset(SyntheticInstances.HUB, 8 * Math.sqrt(rnd.nextDouble()), rnd.nextDouble() * 360);
+                jobs.add(Job.delivery("J" + j, at, 540, 1200, 5, 2 + rnd.nextInt(10)));
+            }
+            var vans = List.of(Vehicle.atDepot("A", 150, 480, 1200), Vehicle.atDepot("B", 150, 480, 1200),
+                    Vehicle.atDepot("C", 150, 480, 1200));
+            Problem p = new Problem(SyntheticInstances.HUB, vans, jobs, TRAVEL);
+            Plan nn = Solver.nearestNeighbour(p);
+            Plan plan = Solver.solve(p, Duration.ofSeconds(1));
+            assertThat(plan.unassigned()).isEmpty();
+            assertThat(plan.totalKm()).as("seed %d", seed).isLessThanOrEqualTo(nn.totalKm() + 1e-9);
+        }
+    }
+
+    @Test
     void twoOptUncrossesARoute() {
         // four corners of a square visited in a crossing order with wide windows
         var jobs = List.of(job("a", 5, 5, 0, 1000, 1), job("b", -5, -5, 0, 1000, 1),

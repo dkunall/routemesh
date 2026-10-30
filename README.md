@@ -8,7 +8,7 @@ Java 21, Spring Boot 3.5, PostgreSQL 16 + PostGIS, Redis, Kafka (KRaft), H3. Eve
 
 ## What it does
 
-- **Day planning (VRP with time windows).** `POST /v1/hubs/{id}/plans` builds routes for every unplanned shipment for a date. It starts from cheapest insertion, then improves the routes with 2-opt and relocate moves inside a time budget (default 1 s). Each van has a capacity and a shift, and each stop has a time window and a service time. The response includes a nearest-neighbour baseline computed on the same input, so the gain is shown next to every plan rather than claimed once.
+- **Day planning (VRP with time windows).** `POST /v1/hubs/{id}/plans` builds routes for every unplanned shipment for a date. It builds two starting plans (cheapest insertion and nearest neighbour), improves each with 2-opt and relocate moves inside a time budget (default 1 s), and keeps the shorter. Each van has a capacity and a shift, and each stop has a time window and a service time. The response includes a nearest-neighbour baseline computed on the same input, so the gain is shown next to every plan rather than claimed once.
 - **Late orders.** `POST /v1/routes/{id}/insertions` inserts a stop at its cheapest feasible position. `POST /v1/dispatch:auto` looks for nearby drivers with H3 rings and tries the shipment on each candidate route, including routes already on the road (a driver can't be sent back for stops already done). Route edits carry `expectedVersion`, and a stale version gets `409 version-conflict`, so two dispatchers can't overwrite each other.
 - **Live tracking.** Devices send location fixes in batches. The batches go to Kafka (`routemesh.pings`, keyed by driver). A consumer then:
   - drops duplicate, stale and physically impossible fixes
@@ -94,26 +94,28 @@ All of these come from synthetic instances on one 8-core box with JDK 21. The be
 
 | jobs | layout | NN km | planner km | change |
 |---:|---|---:|---:|---:|
-| 100 | random | 889.0 | 650.2 | −26.9% |
+| 100 | random | 889.0 | 639.3 | −28.1% |
 | 100 | clustered | 568.5 | 361.6 | −36.4% |
-| 100 | mixed | 810.5 | 572.2 | −29.4% |
-| 200 | random | 1436.7 | 1097.6 | −23.6% |
+| 100 | mixed | 810.5 | 569.1 | −29.8% |
+| 200 | random | 1436.7 | 1057.8 | −26.4% |
 | 200 | clustered | 889.1 | 618.1 | −30.5% |
-| 200 | mixed | 1270.4 | 976.4 | −23.1% |
+| 200 | mixed | 1270.4 | 938.9 | −26.1% |
 
 - Cheapest insertion alone gets −7% to −23%. Most of the remaining gain comes from local search.
 - Every instance assigned all jobs.
-- Local search stops improving after 2–7 ms at these sizes, so the 1 s budget is generous.
+- The whole planner finishes in 3–11 ms (median) at these sizes, so the 1 s budget is generous.
+- The objective is km only, with no fixed cost per van. The planner sometimes uses more vans than cheapest insertion alone (10.3 vs 9.8 on 100 random jobs).
+- The second start exists because of a real miss. An early version used only the insertion start, and on the CI demo day it planned 112.73 km against the baseline's 109.36. `SolverTest` reproduces that shape (24 parcels, three vans, 200 seeds; seed 14 failed before the fix).
 - Nearest neighbour is a weak baseline. I haven't compared against an exact solver or OR-Tools, so I can't say how far these routes are from optimal.
 
 **Late orders: incremental insert vs full re-solve.** 10 orders added one at a time.
 
 | jobs | insert, median | re-solve, median | final km, insert vs re-solve |
 |---:|---:|---:|---:|
-| 100 | 0.74 ms | 2.23 ms | 649.2 vs 632.6 |
-| 200 | 1.95 ms | 6.51 ms | 1065.6 vs 995.7 |
+| 100 | 0.72 ms | 3.30 ms | 637.7 vs 625.9 |
+| 200 | 1.97 ms | 10.65 ms | 1003.3 vs 986.9 |
 
-Inserting is about 3× faster and costs 2.6–7% more km. That's why the planner is meant to run once for the day and inserts handle the rest.
+Inserting is 4.6–5.4× faster and costs 1.7–1.9% more km. That's why the planner is meant to run once for the day and inserts handle the rest.
 
 **ETA: learned per-cell speeds vs a static speed.**
 - 4000 training trips and 1000 held-out trips.
