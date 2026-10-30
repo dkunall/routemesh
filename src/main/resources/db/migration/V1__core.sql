@@ -174,6 +174,7 @@ create table tracking_view (
     eta             timestamptz,
     attempts        int not null,
     driver_name     text,
+    driver_id       uuid,
     last_event_at   timestamptz not null,
     delivered_at    timestamptz,
     expires_at      timestamptz,
