@@ -25,9 +25,11 @@ public record RouteMeshProperties(Security security, Mail mail, Planning plannin
      * @param planningKmh  speed used when a route is planned, before any pings exist
      * @param budget       time budget for local search on a full plan
      * @param insertBudget time budget for 2-opt after an incremental insert
+     * @param candidateRing H3 k-ring radius searched for on-road vehicles near a new pickup
+     * @param zone         hubs' local time zone; windows, shifts and speed hours are in it
      */
     public record Planning(double roadFactor, double planningKmh, Duration budget, Duration insertBudget,
-                           int serviceMinutes, int candidateRing) {
+                           int serviceMinutes, int candidateRing, java.time.ZoneId zone) {
     }
 
     /**

@@ -22,7 +22,7 @@ class SecurityConfig {
 
     /** Driver app endpoints: pings, status events, proof of delivery, today's route. */
     static final String DEVICE_PATHS =
-            "^/v1/(drivers/[^/]+/(pings:batch|route)|shipments/[^/]+/(events|pod))$";
+            "^/v1/(drivers/[^/]+/(pings:batch|events:batch|route)|shipments/[^/]+/(events|pod))$";
 
     @Bean
     @Order(1)
@@ -43,7 +43,7 @@ class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health/**", "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/track/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/track/*/reschedule").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/track/*/reschedule", "/v1/track/*/otp:resend").permitAll()
                         .requestMatchers("/v1/**").authenticated()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(o -> o.jwt(j -> { })
