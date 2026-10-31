@@ -86,6 +86,8 @@ check "resending the whole batch is a no-op" "$(jq -r '[.results[].result] | uni
 
 echo "== live tracking: a fix at the hub, then driving out; the hub geofence marks parcels in transit"
 read -r flat flng <<< "${DROP[${STOPS[0]}]}"
+# 1.2 km towards the first stop in 84 s (~51 km/h): the GPS filter drops fixes that imply more than 130 km/h
+read -r flat flng <<< "$(toward $HUB_LAT $HUB_LNG "$flat" "$flng" 1.2)"
 expect 202 "$DEV" POST "/v1/drivers/${DRIVER[1]}/pings:batch" "$(pings_json $HUB_LAT $HUB_LNG $HUB_LAT $HUB_LNG 1 1 120)" > /dev/null
 read -r olat olng <<< "$(off $HUB_LAT $HUB_LNG 0.1 0)"
 expect 202 "$DEV" POST "/v1/drivers/${DRIVER[1]}/pings:batch" "$(pings_json "$olat" "$olng" "$flat" "$flng" 8 12)" > /dev/null

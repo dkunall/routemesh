@@ -75,6 +75,11 @@ day_ahead() { TZ=Asia/Kolkata date -d "+$1 days" +%F; }
 # off LAT LNG KM_EAST KM_NORTH; prints "lat lng".
 off() { awk -v a="$1" -v b="$2" -v e="$3" -v n="$4" 'BEGIN { printf "%.6f %.6f", a + n / 110.574, b + e / (111.32 * cos(a * 3.14159265 / 180)) }'; }
 
+# toward LAT LNG TO_LAT TO_LNG KM: the point KM along the straight line to TO (or TO itself if it is closer).
+toward() { awk -v a="$1" -v b="$2" -v c="$3" -v d="$4" -v k="$5" 'BEGIN {
+  dy = (c - a) * 110.574; dx = (d - b) * 111.32 * cos(a * 3.14159265 / 180); dist = sqrt(dx * dx + dy * dy);
+  f = (dist > k) ? k / dist : 1; printf "%.6f %.6f", a + (c - a) * f, b + (d - b) * f }'; }
+
 # pings_json FROM_LAT FROM_LNG TO_LAT TO_LNG N EVERY_SEC [END_OFFSET_SEC]; N fixes on a line, the last one at now - END_OFFSET.
 pings_json() {
   local now
