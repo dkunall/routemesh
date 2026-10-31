@@ -140,7 +140,9 @@ L1=$(late_order 1.5 1.5 1)
 r=$(expect 200 "$D" POST /v1/dispatch:auto "{\"shipmentId\":\"$L1\"}")
 echo "  auto-dispatch: $(jq -c '{addedKm, candidatesEvaluated, onRoad}' <<< "$r")"
 check "auto-dispatching it twice" "$(call "$D" POST /v1/dispatch:auto "{\"shipmentId\":\"$L1\"}" | head -1 | jq -r .code)" not-plannable
-R2=$(jq -r '.routes[1].routeId // .routes[0].routeId' <<< "$PLAN")
+# insert next to it on the route it landed on: still PLANNED, so a parcel from the hub can join (it is a second
+# planned route, or a new one opened on an idle van when the plan used a single van that is already on the road)
+R2=$(jq -r .routeId <<< "$r")
 V2=$(expect 200 "$D" GET "/v1/routes/$R2" | jq .version)
 L2=$(late_order -2 1 2); L3=$(late_order -2.2 1.1 3)
 expect 200 "$D" POST "/v1/routes/$R2/insertions" "{\"shipmentId\":\"$L2\",\"expectedVersion\":$V2}" > /dev/null

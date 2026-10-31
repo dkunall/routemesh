@@ -178,7 +178,8 @@ public class RoutingService {
 
     /**
      * Picks the route where the shipment adds the fewest km. Candidates: the day's PLANNED routes, plus for a
-     * return the DISPATCHED routes of drivers within {@code candidateRing} H3 rings of the pickup.
+     * return the DISPATCHED routes of drivers within {@code candidateRing} H3 rings of the pickup. If none fits,
+     * the shipment opens a new route on an idle vehicle ({@code candidatesEvaluated} then counts the misses).
      */
     public DispatchResult autoDispatch(Caller caller, UUID shipmentId) {
         caller.requireDispatcher();
@@ -202,8 +203,12 @@ public class RoutingService {
             var best = candidates.values().stream().map(r -> evaluate(r, s)).flatMap(Optional::stream)
                     .min(Comparator.comparingDouble(Insertion::addedKm));
             if (best.isEmpty()) {
-                throw new ApiException(422, "no-feasible-route", "no route can take this shipment",
-                        Map.of("candidatesEvaluated", candidates.size(), "nearbyDrivers", nearby));
+                int evaluated = candidates.size();
+                int nearbyDrivers = nearby;
+                var opened = tx.execute(t -> openRoute(caller, shipmentId, evaluated, nearbyDrivers));
+                return opened.orElseThrow(() -> new ApiException(422, "no-feasible-route",
+                        "no route can take this shipment and no idle vehicle can serve it",
+                        Map.of("candidatesEvaluated", evaluated, "nearbyDrivers", nearbyDrivers)));
             }
             var chosen = best.get();
             int evaluated = candidates.size();
@@ -224,6 +229,41 @@ public class RoutingService {
                 }
             }
         }
+    }
+
+    /**
+     * Fallback when no existing route can take the shipment: a new PLANNED route on a vehicle of the hub that has
+     * no route that day. Runs under the hub lock, like {@link #plan}, so two callers cannot take the same van.
+     */
+    private Optional<DispatchResult> openRoute(Caller caller, UUID shipmentId, int evaluated, int nearbyDrivers) {
+        var s = shipments.lock(shipmentId).orElseThrow(() -> ApiException.notFound("shipment"));
+        if (!s.status().plannable()) {
+            throw ApiException.conflict("not-plannable", "shipment is " + s.status());
+        }
+        var hub = fleet.hub(s.hubId()).orElseThrow(() -> ApiException.notFound("hub"));
+        routes.lockHub(s.hubId());
+        var date = s.serviceDate();
+        var taken = routes.vehiclesWithRoute(s.hubId(), date);
+        var idle = fleet.activeVehicles(s.hubId()).stream().filter(v -> !taken.contains(v.id())).toList();
+        if (idle.isEmpty()) {
+            return Optional.empty();
+        }
+        var problem = new Problem(hub.location(), idle.stream().map(v -> atDepot(v)).toList(),
+                List.of(job(s, date, Double.NaN)), travel());
+        var rp = Solver.solve(problem, props.planning().budget()).routes().stream()
+                .filter(r -> !r.stops().isEmpty()).findFirst();
+        if (rp.isEmpty()) {
+            return Optional.empty();
+        }
+        var plan = rp.get();
+        var route = new RouteRow(UUID.randomUUID(), s.hubId(), date, UUID.fromString(plan.vehicleId()), null,
+                RouteRow.Status.PLANNED, round(plan.km()), at(date, plan.returnAt()), 0);
+        routes.insert(route, clock.instant());
+        routes.replaceStops(route.id(), List.of(s.id()), List.of(at(date, plan.stops().get(0).arrival())));
+        lifecycle.move(s.withRoute(route.id()), ASSIGNED, "auto-dispatch: new route", caller.subject());
+        meters.counter("routemesh.route.opened").increment();
+        return Optional.of(new DispatchResult(route.id(), round(plan.km()), evaluated, nearbyDrivers, false, false,
+                view(route.id())));
     }
 
     private void checkInsertable(RouteRow route, Shipment s) {

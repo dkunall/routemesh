@@ -104,6 +104,31 @@ class RoutingConcurrencyIT extends ItBase {
     }
 
     @Test
+    void autoDispatchOpensARouteOnAnIdleVanWhenNoPlannedRouteIsLeft() {
+        var hub = hub(2, 1, 500);
+        var shipper = as(unique("shop"));
+        var date = tomorrow();
+        shipment(shipper, hub, "DELIVERY", hub.at().off(2, 0), date);
+        JsonNode plan = plan(hub, date);
+        assertThat(plan.path("routes")).hasSize(1);
+        String first = plan.path("routes").get(0).path("routeId").asText();
+        dispatch(first, hub.drivers().get(0));
+        // the only route is on the road and a delivery cannot join it, so the second van gets a route of its own
+        String extra = shipment(shipper, hub, "DELIVERY", hub.at().off(-2, 1), date).path("id").asText();
+        JsonNode r = dispatcher().post("/v1/dispatch:auto", Map.of("shipmentId", extra)).expect(200).body();
+        assertThat(r.path("routeId").asText()).isNotEqualTo(first);
+        assertThat(r.path("onRoad").asBoolean()).isFalse();
+        assertThat(r.path("route").path("status").asText()).isEqualTo("PLANNED");
+        assertThat(r.path("route").path("stops")).hasSize(1);
+        assertThat(status(extra)).isEqualTo("ASSIGNED");
+        // the next parcel joins that new planned route instead of looking for a third van
+        String third = shipment(shipper, hub, "DELIVERY", hub.at().off(0, 9), date).path("id").asText();
+        JsonNode next = dispatcher().post("/v1/dispatch:auto", Map.of("shipmentId", third)).expect(200).body();
+        assertThat(next.path("routeId").asText()).isEqualTo(r.path("routeId").asText());
+        assertThat(count("select count(*) from route where hub_id = ?::uuid", hub.id())).isEqualTo(2);
+    }
+
+    @Test
     void autoDispatchPicksTheCheapestFeasibleRoute() {
         var hub = hub(2, 0, 500);
         var shipper = as(unique("shop"));
