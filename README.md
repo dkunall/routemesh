@@ -77,8 +77,8 @@ The demo:
 It drives tomorrow's route right now, so ETAs on the page are relative to the current time.
 
 Tests: `mvn verify` runs:
-- 39 unit tests and 7 ArchUnit rules
-- 14 integration tests on Testcontainers (PostGIS, Redis, Kafka, Mailpit, mock OAuth2): delivery flow, device sync, routing concurrency, and exceptions
+- 40 unit tests and 7 ArchUnit rules
+- 15 integration tests on Testcontainers (PostGIS, Redis, Kafka, Mailpit, mock OAuth2): delivery flow, device sync, routing concurrency, and exceptions
 
 Four of the integration tests are concurrency or idempotency checks:
 - concurrent plans never assign a parcel twice
